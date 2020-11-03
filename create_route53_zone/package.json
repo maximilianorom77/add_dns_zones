@@ -1,15 +1,18 @@
 {
-  "name": "create_route53_zone",
-  "version": "1.0.0",
-  "description": "Creates Route53 Hosted Zones with specific attributes",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [
-    "aws",
-    "route53"
-  ],
-  "author": "maximilianorom7@gmail.com",
-  "license": "ISC"
+    "name": "create_route53_zone",
+    "version": "1.0.0",
+    "description": "Creates Route53 Hosted Zones with specific attributes",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "aws",
+        "route53"
+    ],
+    "author": "maximilianorom7@gmail.com",
+    "license": "ISC",
+    "dependencies": {
+        "aws-sdk": ">= 2.0.9"
+    }
 }
