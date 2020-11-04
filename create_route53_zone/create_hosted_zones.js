@@ -38,7 +38,7 @@ function changeResourceRecordSets(args) {
                                 Value: args.name_server
                             }
                         ], 
-                        TTL: 60, 
+                        TTL: 300, 
                         Type: "NS"
                     }
                 }
@@ -85,12 +85,11 @@ function parse_args() {
      * Zone with random name servers, if the name_server is specified the
      * script will update the zone's NS record with that domain name
      *
-     * node create_hosted_names.js --domain_name sub.domain.com --domain_name ns-1617.awsdns-10.co.uk.
+     * node create_hosted_names.js --domain_name sub.domain.com --name_server ns-1617.awsdns-10.co.uk.
      */
     return yargs
-        .option("domain_name")
-        .demand("domain_name")
-        .option("name_server")
+        .option("domain_name").demand("domain_name")
+        .option("name_server").demand("name_server")
         .argv;
 }
 

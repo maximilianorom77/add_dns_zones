@@ -5,8 +5,20 @@ cd create_route53_zone
 npm install
 
 
-To execute
-==========
+Configuration
+=============
+
+You must create a file in ~/.aws/credentials
+
+The File has the following content, replace the aws_access_key_id and the aws_secret_access_key with your credentials
+
+[default]
+aws_access_key_id = ASIA27TUBHUZ7XPKEKGJ
+aws_secret_access_key = dga+/kMxZxt2AqzugtSuddSeNI0yxJak21ill2Yy
+
+
+Execution
+=========
 
 
 To create a zone
@@ -20,4 +32,4 @@ To create a zone with one name server
 *************************************
 
 This will create the zone "sub.domain.com" with the name server "ns-1617.awsdns-10.co.uk."
-node node create_hosted_names.js --domain_name sub.domain.com --domain_name ns-1617.awsdns-10.co.uk.
+node node create_hosted_names.js --domain_name sub.domain.com --name_server ns-1617.awsdns-10.co.uk.
