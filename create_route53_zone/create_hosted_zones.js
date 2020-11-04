@@ -1,11 +1,20 @@
 const AWS = require('aws-sdk');
 const yargs = require('yargs');
+const utils = require("./utils");
 
+
+utils.configureLogging();
 
 const route53 = new AWS.Route53();
 
 
-function createHostedZone(args, callback) {
+function zone_create(callback) {
+    /*
+     * Creates a Route 53 Zone.
+     * Calls callback after
+     */
+
+    console.log(`Creating zone: ${args.domain_name}`);
 
     let date = new Date().toISOString();
 
@@ -15,66 +24,93 @@ function createHostedZone(args, callback) {
     };
 
     route53.createHostedZone(params, function(err, data) {
-        if (err)
-            console.log(err, err.stack);
+        if (err) {
+            console.error(err.message);
+            console.error(`Error creating zone: ${args.domain_name}`);
+            console.debug(err, err.stack);
+        }
         else {
-            console.log(data);
-            callback(err, data);
+            console.log(`Zone created: ${args.domain_name}`);
+            console.debug(data);
+            if (callback) callback(err, data);
         }
     });
 
 }
 
-function changeResourceRecordSets(args) {
+function zone_update_name_servers(callback) {
+    /*
+     * Updates the zone name servers.
+     * Calls callback after
+     */
+
+    console.log(`Updating name servers: ${args.domain_name}`);
+
     let params = {
         ChangeBatch: {
             Changes: [
                 {
-                    Action: "UPSERT", 
+                    Action: "UPSERT",
                     ResourceRecordSet: {
                         Name: args.domain_name,
                         ResourceRecords: [
                             {
                                 Value: args.name_server
                             }
-                        ], 
-                        TTL: 300, 
+                        ],
+                        TTL: 300,
                         Type: "NS"
                     }
                 }
             ]
-        }, 
+        },
         HostedZoneId: args.zone_id
     };
 
     return route53.changeResourceRecordSets(params, function(err, data) {
-        if (err) console.log(err, err.stack);
-        else     console.log(data);
+        if (err) {
+            console.error(err.message);
+            console.error(`Error updating name servers: ${args.domain_name}`);
+            console.debug(err, err.stack);
+        }
+        else {
+            console.log(`Name servers updated: ${args.domain_name}`);
+            console.debug(data);
+            if (callback) callback(err, data);
+        }
     });
 }
 
-function makeCallbackAfterCreate(args) {
+function zone_get_id(data) {
+    /*
+     * Gets the id from the zone or prints error.
+     */
+    let zone_full_id = data && data.HostedZone && data.HostedZone.Id;
+    let zone_id = zone_full_id && zone_full_id.split("/")[2];
 
-    function callbackUpdateRecords(err, data) {
-
-        let zone_full_id = data && data.HostedZone && data.HostedZone.Id;
-        let zone_id = zone_full_id && zone_full_id.split("/")[2];
-
-        if (!zone_full_id || !zone_id) {
-            console.log(
-                "Could not get the HostedZone Id after creating the Zone"
-            );
-            return null;
-        }
-
-        console.log("Created zone with Id: ", zone_id);
-
-        args.zone_id = zone_id;
-
-        return changeResourceRecordSets(args);
+    if (!zone_full_id || !zone_id) {
+        console.error(
+            "Could not get the HostedZone Id after creating the Zone"
+        );
+        return null;
     }
 
-    return callbackUpdateRecords;
+    return zone_id;
+}
+
+function callback_update_name_servers(err, data) {
+    /*
+     * Called after zone_create.
+     * Gets the zone id and updates the name servers with it.
+     *
+     * zone_id is added to the args.
+     */
+    args.zone_id = zone_get_id(data);
+    if (!args.zone_id) return;
+
+    console.log("Created zone with Id: ", args.zone_id);
+
+    return zone_update_name_servers();
 }
 
 function parse_args() {
@@ -93,12 +129,15 @@ function parse_args() {
         .argv;
 }
 
-
 function main() {
-
-    let argv = parse_args();
-
-    return createHostedZone(argv, makeCallbackAfterCreate(argv));
+    /*
+     * The Script does:
+     * 1) Creates a Route 53 zone
+     * 2) Updates the name servers (NS record) in the zone
+     */
+    return zone_create(callback_update_name_servers);
 }
+
+let args = parse_args();
 
 main();

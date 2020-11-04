@@ -4,7 +4,7 @@ const yargs = require('yargs');
 const utils = require("./utils");
 
 
-utils.configureLogging()
+utils.configureLogging();
 
 const s3 = new AWS.S3();
 
@@ -29,7 +29,7 @@ function bucket_create_public(callback) {
             console.debug(err, err.stack);
         }
         else {
-            console.log(`Bucket created successfuly: ${args.bucket_name} go to ${args.bucket_endpoint}`);
+            console.log(`Bucket created: ${args.bucket_name} go to ${args.bucket_endpoint}`);
             console.debug(data);
             if (callback) callback(err, data);
         }
