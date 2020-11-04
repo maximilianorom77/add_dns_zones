@@ -13,11 +13,11 @@ To create a zone
 ****************
 
 This will create the zone "sub.domain.com"
-node node create_hosted_names --domain_name sub.domain.com
+node node create_hosted_names.js --domain_name sub.domain.com
 
 
 To create a zone with one name server
 *************************************
 
 This will create the zone "sub.domain.com" with the name server "ns-1617.awsdns-10.co.uk."
-node node create_hosted_names --domain_name sub.domain.com --domain_name ns-1617.awsdns-10.co.uk.
+node node create_hosted_names.js --domain_name sub.domain.com --domain_name ns-1617.awsdns-10.co.uk.
