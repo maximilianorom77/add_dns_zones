@@ -13,6 +13,7 @@
     "author": "maximilianorom7@gmail.com",
     "license": "ISC",
     "dependencies": {
-        "aws-sdk": ">= 2.0.9"
+        "aws-sdk": ">= 2.0.9",
+        "yargs": "^16.1.0"
     }
 }
