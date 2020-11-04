@@ -3,6 +3,13 @@ const path = require("path");
 
 
 function configureLogging() {
+    /*
+     * Overwrites the console.debug function unless the env variable
+     * LOG_LEVEL is set to DEBUG
+     *
+     * When debugging call the script with LOG_LEVEL=DEBUG in front
+     * to see all the logs
+     */
     switch (process.env.LOG_LEVEL) {
     case "DEBUG":
         break;
@@ -12,6 +19,10 @@ function configureLogging() {
 }
 
 function getAllFiles(dirPath, arrayOfFiles) {
+    /*
+     * List all the files in a directory.
+     * Returns list with full path of the files.
+     */
     files = fs.readdirSync(dirPath);
 
     arrayOfFiles = arrayOfFiles || [];
@@ -28,6 +39,10 @@ function getAllFiles(dirPath, arrayOfFiles) {
 }
 
 function getFilesRelative(dirPath) {
+    /*
+     * List all the files in a directory.
+     * Returns list with relative path of the files to the directory.
+     */
     const all_files = getAllFiles(dirPath);
     let file_names = [];
 
@@ -41,9 +56,7 @@ function getFilesRelative(dirPath) {
     return file_names;
 }
 
-
-configureLogging()
-
 module.exports = {
-    getFilesRelative: getFilesRelative
+    getFilesRelative: getFilesRelative,
+    configureLogging: configureLogging
 }

@@ -4,6 +4,8 @@ const yargs = require('yargs');
 const utils = require("./utils");
 
 
+utils.configureLogging()
+
 const s3 = new AWS.S3();
 
 
