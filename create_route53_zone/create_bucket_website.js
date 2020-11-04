@@ -1,140 +1,171 @@
 const AWS = require('aws-sdk');
-var fs = require('fs');
-const path = require("path");
+const fs = require('fs');
+const yargs = require('yargs');
+const utils = require("./utils");
+
 
 const s3 = new AWS.S3();
 
-const bucket_name = 'testzone2.com';
-const availability_zone = "us-west-2";
-const bucket_endpoint = `http://${bucket_name}.s3-website-${availability_zone}.amazonaws.com`;
 
+function bucket_create_public(callback) {
+    /*
+     * Creates a bucket with public access and in a specifiv availability zone.
+     * it calls callback after creating the bucket.
+     */
 
-function getAllFiles(dirPath, arrayOfFiles) {
-    files = fs.readdirSync(dirPath);
-
-    arrayOfFiles = arrayOfFiles || [];
-
-    files.forEach(function(file) {
-        if (fs.statSync(dirPath + "/" + file).isDirectory()) {
-            arrayOfFiles = getAllFiles(dirPath + "/" + file, arrayOfFiles);
-        } else {
-            arrayOfFiles.push(path.join(__dirname, dirPath, "/", file));
-        }
-    });
-
-    return arrayOfFiles;
-}
-
-function getFilesRelative(dirPath) {
-    const all_files = getAllFiles(dirPath);
-    let file_names = [];
-
-    for (i in all_files) {
-        file_names.push(
-            all_files[i].slice(
-                __dirname.length + dirPath.length + 2
-            ));
-    }
-
-    return file_names;
-}
-
-function create_public_bucket(callback) {
-    // create bucket
+    console.log(`Creating bucket: ${args.bucket_name}`);
 
     var params = {
-        Bucket: bucket_name, /* required */
-        ACL: "public-read",
-        // GrantRead: "everyone"
+        Bucket: args.bucket_name,
+        ACL: "public-read"
     };
 
     s3.createBucket(params, function(err, data) {
-        if (err) console.log(err, err.stack);
+        if (err) {
+            console.error(err.message);
+            console.error(`Error creating bucket: ${args.bucket_name}`);
+            console.debug(err, err.stack);
+        }
         else {
-            console.log(data);
+            console.log(`Bucket created successfuly: ${args.bucket_name} go to ${args.bucket_endpoint}`);
+            console.debug(data);
             if (callback) callback(err, data);
         }
     });
 }
 
-function make_bucket_website(callback) {
-    // Make bucket a website
+function bucket_enable_hosting(callback) {
+    /*
+     * Enables web hosting in the bucket.
+     * the index.html is the default document the bucket will deliver
+     * and in case a file is not found it wil deliver error.html.
+     * it calls callback after enabling the web hosting.
+     */
+
+    console.log(`Enabling web hosting in bucket: ${args.bucket_name}`);
 
     var params = {
-        Bucket: bucket_name, /* required */
-        WebsiteConfiguration: { /* required */
+        Bucket: args.bucket_name,
+        WebsiteConfiguration: {
             ErrorDocument: {
-                Key: "error.html" /* required */
+                Key: "error.html"
             },
             IndexDocument: {
-                Suffix: "index.html" /* required */
+                Suffix: "index.html"
             }
         }
     };
 
     s3.putBucketWebsite(params, function(err, data) {
-        if (err) console.log(err, err.stack);
+        if (err) {
+            console.error(`Error enabling web hosting in bucket: ${args.bucket_name}`);
+            console.debug(err, err.stack);
+        }
         else {
-            console.log(data);
+            console.log(`Web hosting enabled for bucket: ${args.bucket_name}`);
+            console.debug(data);
             if (callback) callback(err, data);
         }
     });
 }
 
-function upload_files(bucket_source, callback) {
-    // put object into the bucket
+function bucket_upload_file(file_name, file_content, callback) {
+    /*
+     * Uploads file into bucket.
+     * calls the callback after
+     */
 
-    const all_files = getFilesRelative(bucket_source);
+    console.log(`Uploading file: ${file_name}`);
 
-    console.log(`Uploading files from directory ${bucket_source}`);
+    var params = {
+        Bucket: args.bucket_name,
+        Key: file_name,
+        ACL: "public-read",
+        Body: file_content,
+        ContentType: 'text/html',
+        ContentEncoding: 'utf-8',
+        ContentDisposition: 'inline',
+    };
+
+    s3.putObject(params, function(err, data) {
+        if (err) {
+            console.error(`Error uploading file: ${file_name}`);
+            console.debug(err, err.stack);
+        }
+        else {
+            console.log(`File uploaded: ${file_name}`);
+            console.debug(data);
+            if (callback) callback(err, data);
+        }
+    });
+}
+
+function bucket_upload_files(callback) {
+    /*
+     * Upload files from a directory to the bucket.
+     * it calls callback after uploading the files.
+     */
+
+    console.log(`Uploading files from directory ${args.bucket_source}`);
+
+    const all_files = utils.getFilesRelative(args.bucket_source);
 
     for (i in all_files) {
 
         let file_name = all_files[i];
 
-        console.log(`Uploading file ${file_name}`);
+        console.log(`Reading file: ${file_name}`);
 
-        fs.readFile(`./${bucket_source}/${file_name}`, (err, file_content) => {
-
+        fs.readFile(`./${args.bucket_source}/${file_name}`, (err, file_content) => {
             if (err) {
-                console.log(`error reading the file ${file_name}`);
-                console.log(err);
-                return
+                console.error(`Error reading file: ${file_name}`);
+                console.debug(err, err.stack);
             }
-
-            var params = {
-                Bucket: bucket_name, /* required */
-                Key: file_name, /* required */
-                ACL: "public-read",
-                Body: file_content,
-                ContentType: 'text/html',
-                ContentEncoding: 'utf-8',
-                ContentDisposition: 'inline',
-            };
-
-            s3.putObject(params, function(err, data) {
-                if (err) {
-                    console.log(err, err.stack);
-                    console.log(`Failed Uploading file ${file_name}`);
-                }
-                else {
-                    console.log(data);
-                    console.log(`Uploaded file ${file_name}`);
-                    if (callback) callback(err, data);
-                }
-            });
+            else {
+                console.log(`File read successfuly: ${file_name}`);
+                bucket_upload_file(file_name, file_content);
+            }
         });
     }
 }
 
+function parse_args() {
+    /*
+     * Parses the Arguments or flags for the script.
+     *
+     * bucket_name:
+     * is the name of the bucket
+     *
+     * bucket_source:
+     * is the path to the folder containing
+     * the files you want to copy to the bucket
+     *
+     * how to call the script:
+     * node create_bucket_website.js --bucket_name sub.domain.com --bucket_source bucket_source
+     */
+    return yargs
+        .option("bucket_name").demand("bucket_name")
+        .option("bucket_source").demand("bucket_source")
+        .argv;
+}
+
 
 function main() {
-    const bucket_source = "bucket_source";
-    create_public_bucket((err, data) => {
-        make_bucket_website((err, data) => {
-            upload_files(bucket_source);
+    /*
+     * The Script does:
+     * 1) it creates a public S3 bucket
+     * 2) enables web hosting in the bucket
+     * 3) it upload files into the bucket
+     */
+
+    bucket_create_public((err, data) => {
+        bucket_enable_hosting((err, data) => {
+            bucket_upload_files();
         });
     });
 }
 
+var args = parse_args();
+const availability_zone = "us-east-1";
+args.bucket_endpoint = `http://${args.bucket_name}.s3-website-${availability_zone}.amazonaws.com`;
 main()
