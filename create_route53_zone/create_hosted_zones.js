@@ -1,7 +1,9 @@
-var AWS = require('aws-sdk');
+const AWS = require('aws-sdk');
+const yargs = require('yargs');
 
 
-var route53 = new AWS.Route53();
+const route53 = new AWS.Route53();
+
 
 function createHostedZone(args, callback) {
 
@@ -33,7 +35,7 @@ function changeResourceRecordSets(args) {
                         Name: args.domain_name,
                         ResourceRecords: [
                             {
-                                Value: args.name_servers[0]
+                                Value: args.name_server
                             }
                         ], 
                         TTL: 60, 
@@ -62,7 +64,7 @@ function makeCallbackAfterCreate(args) {
             console.log(
                 "Could not get the HostedZone Id after creating the Zone"
             );
-            return;
+            return null;
         }
 
         console.log("Created zone with Id: ", zone_id);
@@ -75,16 +77,29 @@ function makeCallbackAfterCreate(args) {
     return callbackUpdateRecords;
 }
 
-function test() {
-    var domain_name = "testzone.com";
-
-    var args = {
-        domain_name: domain_name,
-        name_servers: ["ns-1617.awsdns-10.co.uk."],
-    };
-
-    return createHostedZone(args, makeCallbackAfterCreate(args));
+function parse_args() {
+    /*
+     * Configures and parses the script flags
+     * The domain_name is a required argument
+     * If called without the name_servers flag the script will create Route 53
+     * Zone with random name servers, if the name_server is specified the
+     * script will update the zone's NS record with that domain name
+     *
+     * node create_hosted_names --domain_name sub.domain.com --domain_name ns-1617.awsdns-10.co.uk.
+     */
+    return yargs
+        .option("domain_name")
+        .demand("domain_name")
+        .option("name_server")
+        .argv;
 }
 
-test();
 
+function main() {
+
+    let argv = parse_args();
+
+    return createHostedZone(argv, makeCallbackAfterCreate(argv));
+}
+
+main();
