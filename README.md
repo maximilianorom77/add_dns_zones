@@ -21,22 +21,22 @@ Execution
 =========
 
 
-To create a zone
-****************
+To create a Route 53 zone
+*************************
 
 This will create the zone "sub.domain.com"
 node node create_hosted_names.js --domain_name sub.domain.com
 
 
-To create a zone with one name server
-*************************************
+To create a Route 53 zone with one name server
+**********************************************
 
 This will create the zone "sub.domain.com" with the name server "ns-1617.awsdns-10.co.uk."
 node create_hosted_names.js --domain_name sub.domain.com --name_server ns-1617.awsdns-10.co.uk.
 
 
-To upload the files to the bucket
-*********************************
+To create a S3 bucket for web hosting and upload files to it
+************************************************************
 
 This will create the bucket sub.domain.com and it will upload all the files from bucket_source into the bucket
 node create_bucket_website.js --bucket_name sub.domain.com --bucket_source bucket_source
