@@ -9,7 +9,54 @@ const route53 = new AWS.Route53();
 /*
  * Map between zone_id and the name_servers.
  */
-let zones_created = {};
+let zones_created = new Set();
+let zones_to_delete = new Set();
+
+let interval_for_create = null;
+let interval_for_delete = null;
+
+
+function interval_create_rutine() {
+    if (zones_created.size >= args.max_tries) {
+        console.info(`max_tries reached skipping zone_create`);
+        return;
+    }
+    zone_create((err, data) => {
+        if (err) return;
+        if (data.zone_id)
+            zones_created.add(data.zone_id);
+        if (zone_name_servers_include(data, args.name_server)) {
+            console.log(`Zone matched the name server: ${args.name_server}`);
+            clearInterval(interval_for_create);
+            args.zone_id = data.zone_id;
+        }
+        else {
+            if (data.zone_id)
+                zones_to_delete.add(data.zone_id);
+        }
+    });
+}
+
+
+function interval_delete_rutine(callback) {
+    // If Throttling because too many request
+    // try again and again to delete so that
+    // there are no remaining zones
+    let next = zones_to_delete.values().next();
+    if (next.done) {
+        if (interval_for_create && interval_for_create._destroyed) {
+            clearInterval(interval_for_delete);
+            if (callback) callback();
+        }
+        return;
+    };
+    let zone_id = next.value;
+    zone_delete(zone_id, (err, data) => {
+        if (err) return;
+        zones_to_delete.delete(zone_id);
+        zones_created.delete(zone_id);
+    });
+}
 
 
 function zone_create_concurrently(callback) {
@@ -19,55 +66,18 @@ function zone_create_concurrently(callback) {
      * all the other zones are deleted leaving only one.
      *
      * The zones created are stored in zones_created.
+     *
+     * Deletes twice as frequently as it creates to avoid bottleneck
      */
-    let interval = null;
-    let every = 1000;
+    let every = 800;
 
-    function repeat() {
-        if (Object.keys(zones_created).length >= args.max_tries) {
-            console.debug(`max_tries reached`);
-            return;
-        }
-        zone_create((err, data) => {
-            console.log("zones_created: ", zones_created);
-            zones_created[data.zone_id] = true;
-            if (zone_name_servers_include(data, args.name_server)) {
-                console.log(`Zone matched the name server: ${args.name_server}`);
-                clearInterval(interval);
-                zone_delete_remaining(data.zone_id);
-                callback(err, data);
-            }
-            else {
-                zone_delete(data.zone_id);
-                delete zones_created[data.zone_id];
-            }
-        });
-    }
-
-    interval = setInterval(repeat, every);
+    interval_for_create = setInterval(interval_create_rutine, every * 2);
+    interval_for_delete = setInterval(() => {
+        interval_delete_rutine(callback);
+    }, every);
 }
 
-
-function zone_delete_different_than(zone_id) {
-    for (let created_zone_id in zones_created)
-        if (created_zone_id != zone_id) {
-            zone_delete(created_zone_id);
-            delete zones_created[created_zone_id];
-        }
-}
-
-function zone_delete_remaining(zone_id) {
-    /*
-     * Deletes zones created if there are any remaining zones to be deleted.
-     */
-    zone_delete_different_than(zone_id);
-    // if there are duplicates, delete.
-    let keys = Object.keys(zones_created);
-    if (keys.length > 1)
-        zone_delete_different_than(keys[0]);
-}
-
-function zone_delete(zone_id) {
+function zone_delete(zone_id, callback) {
     /*
      * Given a zone_id it deletes the zone.
      */
@@ -82,18 +92,12 @@ function zone_delete(zone_id) {
             console.error(err.message);
             console.error(`Error deleting zone: ${zone_id}`);
             console.debug(err, err.stack);
-            // If Throttling because too many request
-            // try again and again to delete so that
-            // there are no remaining zones
-            setTimeout(() => {
-                console.debug("Throttling error retrying");
-                zone_delete(zone_id);
-            });
         }
         else {
             console.log(`Zone deleted: ${zone_id}`);
             console.debug(data);
         }
+        if (callback) callback(err, data);
     });
 }
 
@@ -121,13 +125,11 @@ function zone_create(callback) {
         }
         else {
             console.log(`Zone created: ${args.domain_name}`);
-            console.debug(data);
             data.zone_id = zone_get_id(data);
-            args.zone_id = data.zone_id;
-            if (!args.zone_id) return;
-            console.log("Created zone with Id: ", args.zone_id);
-            if (callback) callback(err, data);
+            console.log("Created zone with Id: ", data.zone_id);
+            console.debug(data);
         }
+        if (callback) callback(err, data);
     });
 
 }
@@ -188,8 +190,8 @@ function zone_update_name_servers(callback) {
         else {
             console.log(`Name servers updated: ${args.domain_name}`);
             console.debug(data);
-            if (callback) callback(err, data);
         }
+        if (callback) callback(err, data);
     });
 }
 
@@ -261,8 +263,6 @@ function main() {
      */
 
     zone_create_concurrently((err, data) => {
-        if (!args.name_server)
-            return;
         zone_update_name_servers();
     });
 }
