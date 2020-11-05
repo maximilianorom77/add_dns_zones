@@ -52,7 +52,10 @@ function interval_delete_rutine(callback) {
     };
     let zone_id = next.value;
     zone_delete(zone_id, (err, data) => {
-        if (err) return;
+        // BUGFIX: if error NoSuchHostedZone then delete zone from set
+        // otherwise it will try forever to delete the zone.
+        if (err && err.code != "NoSuchHostedZone" )
+            return;
         zones_to_delete.delete(zone_id);
         zones_created.delete(zone_id);
     });
@@ -69,7 +72,7 @@ function zone_create_concurrently(callback) {
      *
      * Deletes twice as frequently as it creates to avoid bottleneck
      */
-    let every = 800;
+    let every = 1000;
 
     interval_for_create = setInterval(interval_create_rutine, every * 2);
     interval_for_delete = setInterval(() => {
