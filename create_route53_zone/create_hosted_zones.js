@@ -41,6 +41,15 @@ function zone_create(callback) {
 
 }
 
+function zone_get_name_servers(data) {
+    return data && data.DelegationSet && data.DelegationSet.NameServers;
+}
+
+function zone_name_server_include(data, name_server) {
+    let name_servers = zone_get_name_servers;
+    return name_servers.include(name_server);
+}
+
 function zone_update_name_servers(callback) {
     /*
      * Updates the zone name servers.
