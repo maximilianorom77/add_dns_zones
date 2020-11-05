@@ -32,19 +32,17 @@ To create a zone with one name server
 *************************************
 
 This will create the zone "sub.domain.com" with the name server "ns-1617.awsdns-10.co.uk."
-node node create_hosted_names.js --domain_name sub.domain.com --name_server ns-1617.awsdns-10.co.uk.
+node create_hosted_names.js --domain_name sub.domain.com --name_server ns-1617.awsdns-10.co.uk.
 
 
 To upload the files to the bucket
 *********************************
 
-This will create the bucket testzone2.com (I'll change this harcoded name with a flag this is a work in progrss)
-and it will upload all the files from the folder_"source directory" into the bucket.
-node create_bucket_website.js
+This will create the bucket sub.domain.com and it will upload all the files from bucket_source into the bucket
+node create_bucket_website.js --bucket_name sub.domain.com --bucket_source bucket_source
 
 
 TODO
 ====
 
-* add a flag for the name of the bucket default to the domain_name
 * create and delete zones till it matches with name_server

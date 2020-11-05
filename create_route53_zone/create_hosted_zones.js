@@ -6,7 +6,30 @@ const utils = require("./utils");
 utils.configureLogging();
 
 const route53 = new AWS.Route53();
+/*
+ * Map between zone_id and the name_servers.
+ */
+let zones_created = {};
 
+
+// TODO
+function zone_create_concurrently(callback) {
+    /*
+     * Creates many zones at the same time to be faster
+     * once a zone matches the name server
+     * all the other zones are deleted leaving only one.
+     *
+     * The zones created are stored in zones_created
+     */
+
+    zone_create((err, data) => {
+        zones_created.zone_id = true;
+        if (!zone_name_server_include(data, args.name_server)) {
+            zone_delete(data.zone_id);
+            delete zones_created.zone_id;
+        }
+    });
+}
 
 function zone_create(callback) {
     /*
@@ -32,7 +55,8 @@ function zone_create(callback) {
         else {
             console.log(`Zone created: ${args.domain_name}`);
             console.debug(data);
-            args.zone_id = zone_get_id(data);
+            data.zone_id = zone_get_id(data);
+            args.zone_id = data.zone_id;
             if (!args.zone_id) return;
             console.log("Created zone with Id: ", args.zone_id);
             if (callback) callback(err, data);
@@ -135,6 +159,8 @@ function main() {
 
     // zone_create(callback_update_name_servers);
     zone_create((err, data) => {
+        if (!args.name_server)
+            return;
         zone_update_name_servers();
     });
 }
