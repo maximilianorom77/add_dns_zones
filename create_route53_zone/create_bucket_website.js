@@ -167,7 +167,10 @@ function main() {
     });
 }
 
-var args = parse_args();
+let args = parse_args();
+
+/* by default the AWS SDK will create the bucket in us-east-1*/
 const availability_zone = "us-east-1";
 args.bucket_endpoint = `http://${args.bucket_name}.s3-website-${availability_zone}.amazonaws.com`;
+
 main()

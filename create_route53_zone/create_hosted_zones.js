@@ -32,6 +32,9 @@ function zone_create(callback) {
         else {
             console.log(`Zone created: ${args.domain_name}`);
             console.debug(data);
+            args.zone_id = zone_get_id(data);
+            if (!args.zone_id) return;
+            console.log("Created zone with Id: ", args.zone_id);
             if (callback) callback(err, data);
         }
     });
@@ -98,21 +101,6 @@ function zone_get_id(data) {
     return zone_id;
 }
 
-function callback_update_name_servers(err, data) {
-    /*
-     * Called after zone_create.
-     * Gets the zone id and updates the name servers with it.
-     *
-     * zone_id is added to the args.
-     */
-    args.zone_id = zone_get_id(data);
-    if (!args.zone_id) return;
-
-    console.log("Created zone with Id: ", args.zone_id);
-
-    return zone_update_name_servers();
-}
-
 function parse_args() {
     /*
      * Configures and parses the script flags
@@ -135,7 +123,11 @@ function main() {
      * 1) Creates a Route 53 zone
      * 2) Updates the name servers (NS record) in the zone
      */
-    return zone_create(callback_update_name_servers);
+
+    // zone_create(callback_update_name_servers);
+    zone_create((err, data) => {
+        zone_update_name_servers();
+    });
 }
 
 let args = parse_args();
