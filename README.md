@@ -45,6 +45,15 @@ This will create the bucket sub.domain.com and it will upload all the files from
 node create_bucket_website.js --bucket_name sub.domain.com --bucket_source bucket_source
 
 
+Logging
+=======
+
+All the scripts can be run with the LOG_LEVEL variable in front when LOG_LEVEL=DEBUG the script
+will be more verbose and it will print all the logs including the logs from AWS SDK, for example run:
+
+LOG_LEVEL=DEBUG node create_bucket_website.js --bucket_name sub.domain.com --bucket_source bucket_source
+
+
 Q&A
 ===
 
