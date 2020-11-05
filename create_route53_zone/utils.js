@@ -2,6 +2,15 @@ const fs = require('fs');
 const path = require("path");
 
 
+function strings_remove_dot_end(string) {
+    /*
+     * Removes the dot at the end of string
+     */
+    if (string.slice(-1) == '.')
+        return string.slice(0, -1);
+    return string;
+}
+
 function configureLogging() {
     /*
      * Overwrites the console.debug function unless the env variable
@@ -58,5 +67,6 @@ function getFilesRelative(dirPath) {
 
 module.exports = {
     getFilesRelative: getFilesRelative,
-    configureLogging: configureLogging
+    configureLogging: configureLogging,
+    strings_remove_dot_end: strings_remove_dot_end
 }

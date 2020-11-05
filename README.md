@@ -35,7 +35,7 @@ This will create the zone "sub.domain.com" with the name server "ns-1617.awsdns-
 the max_tries flag tells the script the maximum count of zones to create simultaneusly if it reaches this point
 it will stop creating and it will wait for the deletetion to happen and when the number is lower it will
 start again creating.
-node create_hosted_names.js --domain_name sub.domain.com --name_server ns-1617.awsdns-10.co.uk. --max_tries 10
+node create_hosted_zones.js --domain_name sub.domain.com --name_server ns-1617.awsdns-10.co.uk. --max_tries 10
 
 
 To create a S3 bucket for web hosting and upload files to it
@@ -66,7 +66,7 @@ Bugs
 ====
 
 
-* It tries to match the value of the ns against the value of the ns with the trailing period
+* It tries to match the value of the ns against the value of the ns with the trailing period DONE
 
 * Never finishes because it cannot delete a zone that it can't find
 

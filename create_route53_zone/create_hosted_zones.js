@@ -147,6 +147,7 @@ function zone_name_servers_include(data, name_server) {
      * Returns true if name_server is one of
      * the name servers of the zone.
      */
+    name_server = utils.strings_remove_dot_end(name_server);
     let name_servers = zone_get_name_servers(data);
     console.log(`Name servers: ${name_servers}`);
     return name_servers.includes(name_server);
