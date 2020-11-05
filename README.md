@@ -43,3 +43,55 @@ To create a S3 bucket for web hosting and upload files to it
 
 This will create the bucket sub.domain.com and it will upload all the files from bucket_source into the bucket
 node create_bucket_website.js --bucket_name sub.domain.com --bucket_source bucket_source
+
+
+Q&A
+===
+
+
+how many zones can we create per minute?
+****************************************
+
+
+TODO
+====
+
+
+* Add a flag to specify the type "A" record in the zone to point to the bucket
+
+* add a flag to limit the zones to create and when reached stop the script
+
+
+Bugs
+====
+
+
+* It tries to match the value of the ns against the value of the ns with the trailing period
+
+* Never finishes because it cannot delete a zone that it can't find
+
+ne found with ID: Z02914962GYH6HQZWHUIH
+Error deleting zone: Z02914962GYH6HQZWHUIH
+max_tries reached skipping zone_create
+Deleting zone: Z02914962GYH6HQZWHUIH
+No hosted zone found with ID: Z02914962GYH6HQZWHUIH
+
+
+script improvement and future work
+==================================
+
+
+* allow multiple name_server inputs or a file with name servers on each line.~
+
+
+Qute To Analyze
+===============
+
+
+so weird though, I found the 3 i was looking for
+
+only 1 seemed to save to my account
+
+I wonder if I killed the job before all the adding deleting was done
+
+it said matched but only first is showing in my account
