@@ -26,7 +26,9 @@ function params_change_record_sets(mode, type, record, args) {
         record_set.AliasTarget = {
             DNSName: record,
             EvaluateTargetHealth: false,
-            HostedZoneId: args.zone_id
+            // Zone if for buckets in us-east-1 the default region
+            // https://docs.aws.amazon.com/general/latest/gr/s3.html#s3_website_region_endpoints
+            HostedZoneId: "Z3AQBSTGFYJSTF"
         };
     }
     else {
@@ -35,8 +37,9 @@ function params_change_record_sets(mode, type, record, args) {
                 Value: record
             }
         ];
+        record_set.TTL = 300
     }
-    return {
+    let params = {
         ChangeBatch: {
             Changes: [
                 {
@@ -47,6 +50,9 @@ function params_change_record_sets(mode, type, record, args) {
         },
         HostedZoneId: args.zone_id
     };
+    console.debug("params: ", params);
+    console.debug("args: ", args);
+    return params;
 
 }
 

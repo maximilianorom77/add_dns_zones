@@ -21,6 +21,13 @@ Execution
 =========
 
 
+To create a S3 bucket for web hosting and upload files to it
+************************************************************
+
+This will create the bucket sub.domain.com and it will upload all the files from bucket_source into the bucket
+node create_bucket_website.js --bucket_name sub.domain.com --bucket_source bucket_source
+
+
 To create a Route 53 zone with one name server
 **********************************************
 
@@ -28,19 +35,14 @@ This will create the zone "sub.domain.com" with the name server "ns-1617.awsdns-
 
 the max_tries flag tells the script the maximum count of zones to create simultaneusly if it reaches this point
 it will stop creating and it will wait for the deletetion to happen and when the number is lower it will
-start again creating.
+start creating again.
 
 the limit_create flag limits the amount of zones to create when reached this number the script will stop after deleting
 all the zones that it created while trying to match the name server.
 
-node create_hosted_zones.js --domain_name sub.domain.com --name_server ns-1617.awsdns-10.co.uk. --max_tries 10 --limit_create 1000
+the bucket_url is the full url to the bucket, after running the create_bucket_website.js script in the logs the url will be printed, copy it and pass it in the flag --bucket_url, the name of the bucket and the name of the zone must be the same, is a aws restriction.
 
-
-To create a S3 bucket for web hosting and upload files to it
-************************************************************
-
-This will create the bucket sub.domain.com and it will upload all the files from bucket_source into the bucket
-node create_bucket_website.js --bucket_name sub.domain.com --bucket_source bucket_source
+node create_hosted_zones.js --domain_name sub.domain.com --name_server ns-1617.awsdns-10.co.uk. --max_tries 10 --limit_create 1000 --bucket_url sub.domain.com.s3-website-us-east-1.amazonaws.com
 
 
 Logging
@@ -64,11 +66,11 @@ Testing I run the script to create 1000 zones maximum, It took 17 minutes to com
 But in another test out of luck it matched the name server in less than 3 minutes, so almost imposible to predict how much time it will take to match the name server.
 
 
-TODO
-====
+What does it mean "A conflicting conditional operation is currently in progress against this resource"
+******************************************************************************************************
 
-
-* Add a flag to specify the type "A" record in the zone to point to the bucket
+if you see this error when creating a bucket it could be this https://aws.amazon.com/premiumsupport/knowledge-center/s3-conflicting-conditional-operation/
+happened to me while testing, after deleting and creating again a bucket with the same name
 
 
 Bugs
@@ -92,15 +94,3 @@ script improvement and future work
 
 * allow multiple name_server inputs or a file with name servers on each line.~
 
-
-Qute To Analyze
-===============
-
-
-so weird though, I found the 3 i was looking for
-
-only 1 seemed to save to my account
-
-I wonder if I killed the job before all the adding deleting was done
-
-it said matched but only first is showing in my account

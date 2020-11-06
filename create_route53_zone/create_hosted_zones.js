@@ -280,7 +280,7 @@ function parse_args() {
         .option("name_server").demand("name_server")
         .option("max_tries").demand("max_tries")
         .option("limit_create").demand("limit_create")
-        .option("bucket_url")
+        .option("bucket_url").option("bucket_url")
         .argv;
     if (args.max_tries)
         args.max_tries = Number(args.max_tries);
@@ -298,12 +298,14 @@ function main() {
 
     zone_create_concurrently((err, data) => {
         if (args.zone_id)
-            zone_update_name_servers();
-        process.exit(0);
+            zone_update_name_servers((err, data) => {
+                zone_add_record_type_a((err, data) => {
+                    process.exit(0);
+                });
+            });
     });
 }
 
 let args = parse_args();
 
 main();
-// zone_delete_with_name();
