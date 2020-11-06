@@ -1,6 +1,7 @@
 const AWS = require('aws-sdk');
 const yargs = require('yargs');
 const utils = require("./utils");
+var Queue = require('queue-fifo');
 
 
 utils.configureLogging();
@@ -10,7 +11,7 @@ const route53 = new AWS.Route53();
  * Map between zone_id and the name_servers.
  */
 let zones_created = new Set();
-let zones_to_delete = new Set();
+let zones_to_delete = new Queue();
 
 let interval_for_create = null;
 let interval_for_delete = null;
@@ -32,7 +33,7 @@ function interval_create_rutine() {
         }
         else {
             if (data.zone_id)
-                zones_to_delete.add(data.zone_id);
+                zones_to_delete.enqueue(data.zone_id);
         }
     });
 }
@@ -42,21 +43,24 @@ function interval_delete_rutine(callback) {
     // If Throttling because too many request
     // try again and again to delete so that
     // there are no remaining zones
-    let next = zones_to_delete.values().next();
-    if (next.done) {
+    if (zones_to_delete.size() == 0) {
         if (interval_for_create && interval_for_create._destroyed) {
             clearInterval(interval_for_delete);
             if (callback) callback();
         }
         return;
     };
-    let zone_id = next.value;
+    let zone_id = zones_to_delete.dequeue();
     zone_delete(zone_id, (err, data) => {
         // BUGFIX: if error NoSuchHostedZone then delete zone from set
         // otherwise it will try forever to delete the zone.
-        if (err && err.code != "NoSuchHostedZone" )
+        if (err) {
+            if (err.code != "NoSuchHostedZone") {
+                // for other errors enqueue the zone to be deleted
+                zones_to_delete.enqueue(zone_id);
+            }
             return;
-        zones_to_delete.delete(zone_id);
+        }
         zones_created.delete(zone_id);
     });
 }
@@ -74,7 +78,7 @@ function zone_create_concurrently(callback) {
      */
     let every = 1000;
 
-    interval_for_create = setInterval(interval_create_rutine, every * 2);
+    interval_for_create = setInterval(interval_create_rutine, every);
     interval_for_delete = setInterval(() => {
         interval_delete_rutine(callback);
     }, every);
@@ -152,7 +156,7 @@ function zone_name_servers_include(data, name_server) {
      */
     name_server = utils.strings_remove_dot_end(name_server);
     let name_servers = zone_get_name_servers(data);
-    console.log(`Name servers: ${name_servers}`);
+    console.log(`Name servers: ${name_servers} don't match ${name_server}`);
     return name_servers.includes(name_server);
 }
 
@@ -274,3 +278,4 @@ function main() {
 let args = parse_args();
 
 main();
+// zone_delete_with_name();
