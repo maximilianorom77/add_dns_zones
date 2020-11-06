@@ -16,8 +16,23 @@ let zones_to_delete = new Queue();
 let interval_for_create = null;
 let interval_for_delete = null;
 
+let zones_created_counter = 0;
+
+
+function interval_clear_create() {
+    console.debug("clearInterval for create");
+    console.debug(interval_for_create);
+    clearInterval(interval_for_create);
+    interval_for_create._cleared = true;
+}
 
 function interval_create_rutine() {
+    zones_created_counter += 1
+    console.log(`interval_create_rutine ${zones_created_counter}`);
+    if (zones_created_counter >= args.limit_create) {
+        interval_clear_create();
+        return;
+    }
     if (zones_created.size >= args.max_tries) {
         console.info(`max_tries reached skipping zone_create`);
         return;
@@ -28,7 +43,7 @@ function interval_create_rutine() {
             zones_created.add(data.zone_id);
         if (zone_name_servers_include(data, args.name_server)) {
             console.log(`Zone matched the name server: ${args.name_server}`);
-            clearInterval(interval_for_create);
+            interval_clear_create();
             args.zone_id = data.zone_id;
         }
         else {
@@ -43,8 +58,9 @@ function interval_delete_rutine(callback) {
     // If Throttling because too many request
     // try again and again to delete so that
     // there are no remaining zones
+    console.log(`interval_delete_rutine`);
     if (zones_to_delete.size() == 0) {
-        if (interval_for_create && interval_for_create._destroyed) {
+        if (interval_for_create && interval_for_create._cleared) {
             clearInterval(interval_for_delete);
             if (callback) callback();
         }
@@ -263,10 +279,13 @@ function parse_args() {
         .option("domain_name").demand("domain_name")
         .option("name_server").demand("name_server")
         .option("max_tries").demand("max_tries")
+        .option("limit_create").demand("limit_create")
         .option("bucket_url")
         .argv;
     if (args.max_tries)
         args.max_tries = Number(args.max_tries);
+    if (args.limit_create)
+        args.limit_create = Number(args.limit_create);
     return args;
 }
 
@@ -278,7 +297,9 @@ function main() {
      */
 
     zone_create_concurrently((err, data) => {
-        zone_update_name_servers();
+        if (args.zone_id)
+            zone_update_name_servers();
+        process.exit(0);
     });
 }
 

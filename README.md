@@ -21,21 +21,19 @@ Execution
 =========
 
 
-To create a Route 53 zone
-*************************
-
-This will create the zone "sub.domain.com"
-node node create_hosted_names.js --domain_name sub.domain.com
-
-
 To create a Route 53 zone with one name server
 **********************************************
 
 This will create the zone "sub.domain.com" with the name server "ns-1617.awsdns-10.co.uk."
+
 the max_tries flag tells the script the maximum count of zones to create simultaneusly if it reaches this point
 it will stop creating and it will wait for the deletetion to happen and when the number is lower it will
 start again creating.
-node create_hosted_zones.js --domain_name sub.domain.com --name_server ns-1617.awsdns-10.co.uk. --max_tries 10
+
+the limit_create flag limits the amount of zones to create when reached this number the script will stop after deleting
+all the zones that it created while trying to match the name server.
+
+node create_hosted_zones.js --domain_name sub.domain.com --name_server ns-1617.awsdns-10.co.uk. --max_tries 10 --limit_create 1000
 
 
 To create a S3 bucket for web hosting and upload files to it
@@ -61,9 +59,9 @@ Q&A
 how many zones can we create per minute?
 ****************************************
 
-Testing I run the script for an exact hour, It created 1532 in 60 minutes so 25.53 per minute aprox, in this hour of test it didn't match my name server ns-1617.awsdns-10.co.uk.
+Testing I run the script to create 1000 zones maximum, It took 17 minutes to complete so the script can create 1000 / 17 = 58.82 zones per minute aprox, on this 17 minutes of testing the script couldn't find a zone that matches with the name server ns-1617.awsdns-10.co.uk. that I specified.
 
-But in another out of luck it matched the name server in less than 5 minutes, so almost imposible to predict how much time it will take to match the name server.
+But in another test out of luck it matched the name server in less than 3 minutes, so almost imposible to predict how much time it will take to match the name server.
 
 
 TODO
@@ -71,8 +69,6 @@ TODO
 
 
 * Add a flag to specify the type "A" record in the zone to point to the bucket
-
-* add a flag to limit the zones to create and when reached stop the script
 
 
 Bugs

@@ -11,9 +11,11 @@ new_number=$(bc <<< "${last_number} + 1")
 move_to="logs/create_zones.${new_number}.log"
 mv $current_log $move_to
 date > $current_log
+# it takes 17 minutes aprox to create 1000 zones
 LOG_LEVEL=DEBUG time node ./create_hosted_zones.js \
          --domain_name testzone.com \
          --name_server ns-1617.awsdns-10.co.uk. \
          --bucket_url google.com. \
+         --limit_create 1000 \
          --max_tries 10 > $current_log 2>&1
 
