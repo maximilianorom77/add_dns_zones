@@ -11,6 +11,35 @@ function strings_remove_dot_end(string) {
     return string;
 }
 
+
+function params_change_record_sets(mode, type, record) {
+    /*
+     * Function used to create the parameters for
+     * changeResourceRecordSets given a mode CREATE, UPDATE, UPSERT
+     * a type NS, A and a record depending on the type
+     */
+    return {
+        ChangeBatch: {
+            Changes: [
+                {
+                    Action: mode,
+                    ResourceRecordSet: {
+                        Name: args.domain_name,
+                        ResourceRecords: [
+                            {
+                                Value: record
+                            }
+                        ],
+                        TTL: 300,
+                        Type: type
+                    }
+                }
+            ]
+        },
+        HostedZoneId: args.zone_id
+    };
+}
+
 function configureLogging() {
     /*
      * Overwrites the console.debug function unless the env variable
@@ -68,5 +97,6 @@ function getFilesRelative(dirPath) {
 module.exports = {
     getFilesRelative: getFilesRelative,
     configureLogging: configureLogging,
-    strings_remove_dot_end: strings_remove_dot_end
+    strings_remove_dot_end: strings_remove_dot_end,
+    params_change_record_sets: params_change_record_sets
 }
