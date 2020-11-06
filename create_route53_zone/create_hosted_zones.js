@@ -160,34 +160,40 @@ function zone_name_servers_include(data, name_server) {
     return name_servers.includes(name_server);
 }
 
+function zone_add_record_type_a(callback) {
+    /*
+     * Adds a record type A to the zone.
+     * This is used to point to the domain of the bucket
+     * used for webhosting.
+     */
+    console.log(`Adding record type A: ${args.domain_name}`);
+
+
+    let params = utils.params_change_record_sets("CREATE", "A", args.bucket_url, args);
+
+    return route53.changeResourceRecordSets(params, function(err, data) {
+        if (err) {
+            console.error(err.message);
+            console.error(`Error adding record type A: ${args.domain_name}`);
+            console.debug(err, err.stack);
+        }
+        else {
+            console.log(`Record type A added: ${args.domain_name}`);
+            console.debug(data);
+        }
+        if (callback) callback(err, data);
+    });
+
+}
+
 function zone_update_name_servers(callback) {
     /*
      * Updates the zone name servers.
      * Calls callback after
      */
-
     console.log(`Updating name servers: ${args.domain_name}`);
 
-    let params = {
-        ChangeBatch: {
-            Changes: [
-                {
-                    Action: "UPSERT",
-                    ResourceRecordSet: {
-                        Name: args.domain_name,
-                        ResourceRecords: [
-                            {
-                                Value: args.name_server
-                            }
-                        ],
-                        TTL: 300,
-                        Type: "NS"
-                    }
-                }
-            ]
-        },
-        HostedZoneId: args.zone_id
-    };
+    let params = utils.params_change_record_sets("UPSERT", "NS", args.name_server, args);
 
     return route53.changeResourceRecordSets(params, function(err, data) {
         if (err) {
@@ -257,6 +263,7 @@ function parse_args() {
         .option("domain_name").demand("domain_name")
         .option("name_server").demand("name_server")
         .option("max_tries").demand("max_tries")
+        .option("bucket_url")
         .argv;
     if (args.max_tries)
         args.max_tries = Number(args.max_tries);

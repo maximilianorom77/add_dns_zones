@@ -12,32 +12,42 @@ function strings_remove_dot_end(string) {
 }
 
 
-function params_change_record_sets(mode, type, record) {
+function params_change_record_sets(mode, type, record, args) {
     /*
      * Function used to create the parameters for
      * changeResourceRecordSets given a mode CREATE, UPDATE, UPSERT
      * a type NS, A and a record depending on the type
      */
+    let record_set = {
+        Name: args.domain_name,
+        Type: type
+    };
+    if (type == "A") {
+        record_set.AliasTarget = {
+            DNSName: record,
+            EvaluateTargetHealth: false,
+            HostedZoneId: args.zone_id
+        };
+    }
+    else {
+        record_set.ResourceRecords = [
+            {
+                Value: record
+            }
+        ];
+    }
     return {
         ChangeBatch: {
             Changes: [
                 {
                     Action: mode,
-                    ResourceRecordSet: {
-                        Name: args.domain_name,
-                        ResourceRecords: [
-                            {
-                                Value: record
-                            }
-                        ],
-                        TTL: 300,
-                        Type: type
-                    }
+                    ResourceRecordSet: record_set
                 }
             ]
         },
         HostedZoneId: args.zone_id
     };
+
 }
 
 function configureLogging() {

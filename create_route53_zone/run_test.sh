@@ -11,5 +11,9 @@ new_number=$(bc <<< "${last_number} + 1")
 move_to="logs/create_zones.${new_number}.log"
 mv $current_log $move_to
 date > $current_log
-LOG_LEVEL=DEBUG time node ./create_hosted_zones.js --domain_name testzone.com --name_server ns-1617.awsdns-10.co.uk. --max_tries 10 > $current_log 2>&1
+LOG_LEVEL=DEBUG time node ./create_hosted_zones.js \
+         --domain_name testzone.com \
+         --name_server ns-1617.awsdns-10.co.uk. \
+         --bucket_url google.com. \
+         --max_tries 10 > $current_log 2>&1
 
