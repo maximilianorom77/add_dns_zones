@@ -77,7 +77,7 @@ Bugs
 
 * It tries to match the value of the ns against the value of the ns with the trailing period DONE
 
-* Never finishes because it cannot delete a zone that it can't find
+* Never finishes because it cannot delete a zone that it can't find DONE
 
 ne found with ID: Z02914962GYH6HQZWHUIH
 Error deleting zone: Z02914962GYH6HQZWHUIH
