@@ -61,6 +61,10 @@ Q&A
 how many zones can we create per minute?
 ****************************************
 
+Testing I run the script for an exact hour, It created 1532 in 60 minutes so 25.53 per minute aprox, in this hour of test it didn't match my name server ns-1617.awsdns-10.co.uk.
+
+But in another out of luck it matched the name server in less than 5 minutes, so almost imposible to predict how much time it will take to match the name server.
+
 
 TODO
 ====
