@@ -7,15 +7,24 @@ var Queue = require('queue-fifo');
 utils.configureLogging();
 
 const route53 = new AWS.Route53();
-/*
- * Map between zone_id and the name_servers.
- */
-let zones_created = new Set();
-let zones_to_delete = new Queue();
 
+// stores the ids of the zone that were created
+let zones_created = new Set();
+// stores the ids of the zone that don't match the name server and need to be deleted
+let zones_to_delete = new Queue();
+// stores the count of calls to zone_delete, is necessary to check before terminating the
+// delete rutine otherwise the program will exit asuming the zones were delete even if the
+// delete fails in the future, so the program will exit only of the size of zones_to_delete
+// equal 0 AND pending_deletes equal 0, making sure all the zones that don't match get deleted
+let pending_deletes = 0;
+
+// the object representing the interval for create zones
 let interval_for_create = null;
+
+// the object representing the interval for deleting zones
 let interval_for_delete = null;
 
+// used for limiting the zones created simultaneusly if it reaches args.max_tries it will stop creating zones
 let zones_created_counter = 0;
 
 
@@ -27,6 +36,14 @@ function interval_clear_create() {
 }
 
 function interval_create_rutine() {
+    /*
+     * The create rutine is called by setInterval.
+     *
+     * It creates the zones and after creating them it will check that
+     * the name server matches with the flag --name_server if it does
+     * then it will stop the interval and it will get the zone_id so that
+     * the following functions can update that zone (to add the A record and such)
+     */
     zones_created_counter += 1
     console.log(`interval_create_rutine ${zones_created_counter}`);
     if (zones_created_counter >= args.limit_create) {
@@ -55,12 +72,20 @@ function interval_create_rutine() {
 
 
 function interval_delete_rutine(callback) {
-    // If Throttling because too many request
-    // try again and again to delete so that
-    // there are no remaining zones
+    /*
+     * The create delete is called by setInterval.
+     *
+     * it deletes all the zones that don't match the name server,
+     * the interval will stop under thee conditions:
+     * 1) the queue for deleting zones is emoty.
+     * 2) the pending deletes is 0.
+     * 3) the interval for creating zones is stopped.
+     *
+     * after the create interval is stopped it will call the callback to update the type A record
+     */
     console.log(`interval_delete_rutine`);
     if (zones_to_delete.size() == 0) {
-        if (interval_for_create && interval_for_create._cleared) {
+        if (pending_deletes == 0 && interval_for_create && interval_for_create._cleared) {
             clearInterval(interval_for_delete);
             if (callback) callback();
         }
@@ -110,7 +135,9 @@ function zone_delete(zone_id, callback) {
         Id: zone_id
     };
 
+    pending_deletes += 1;
     route53.deleteHostedZone(params, (err, data) => {
+        pending_deletes -= 1;
         if (err) {
             console.error(err.message);
             console.error(`Error deleting zone: ${zone_id}`);
@@ -309,3 +336,4 @@ function main() {
 let args = parse_args();
 
 main();
+// zone_delete_with_name()
